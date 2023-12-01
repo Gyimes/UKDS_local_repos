@@ -1,4 +1,4 @@
-#### Info ####
+A#### Info ####
 
 #' Make a local repository by mirroring CRAN
 #'
@@ -19,13 +19,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' create_repository(pathtorepo = "path/to/repo", libpath = "path/to/library", Rvers = "4.2")
+#' CRANMaker(pathtorepo = "path/to/repo", libpath = "https://cloud.r-project.org/", Rvers = "4.2", dependencies = TRUE)
 #' }
 #'
 #' Created by Istvan Laszlo Gyimes (ig16036[at]essex.ac.uk)
 #' R version 4.2.2
 #' RStudio RStudio 2022.07.1+554 "Spotted Wakerobin" Release (7872775ebddc40635780ca1ed238934c3345c5de, 2022-07-22) for Windows Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) QtWebEngine/5.12.8 Chrome/69.0.3497.128 Safari/537.36
-#' Last modified 20-NOV-2023
+#' Last modified 01-DEC-2023
 #' @export
 
 
