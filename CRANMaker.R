@@ -92,9 +92,9 @@ CRANMaker <- function(pathtorepo, librepo = "https://cloud.r-project.org/", Rver
   if(!file.exists(paste0(pathtorepo, "/Archive/"))){
     dir.create(path = paste0(pathtorepo, "/Archive/"))
   }
-  tools::write_PACKAGES(dir = paste0(pathtorepo, "/bin/windows/contrib/", Rvers, "/"))
-  tools::write_PACKAGES(dir = paste0(pathtorepo, "/src/contrib/"))
+  tools::write_PACKAGES(dir = paste0(pathtorepo, "/bin/windows/contrib/", Rvers, "/"), type = "win.binary")
+  tools::write_PACKAGES(dir = paste0(pathtorepo, "/src/contrib/"), type = "source")
   if (!length(dir(paste0(pathtorepo, "/Archive/src/contrib/"))) == 0) {
-    tools::write_PACKAGES(dir = paste0(pathtorepo, "/Archive/src/contrib/"))
+    tools::write_PACKAGES(dir = paste0(pathtorepo, "/Archive/src/contrib/"), type = "source")
   }
 }
