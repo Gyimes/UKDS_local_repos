@@ -19,7 +19,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' CRANMaker(pathtorepo = "path/to/repo", libpath = "https://cran.r-project.org", Rvers = "4.2", dependencies = TRUE)
+#' CRANMaker(pathtorepo = "path/to/repo", libpath = "https://cran.r-project.org", Rvers = "4.2", multiple.lib = FALSE)
 #' }
 #'
 #' Created by Istvan Laszlo Gyimes (ig16036[at]essex.ac.uk)
