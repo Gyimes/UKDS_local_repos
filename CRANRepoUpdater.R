@@ -12,9 +12,6 @@
 #' @param Rvers The version of R for which the repository is made. 
 #' By default, it is set to the current R version (major.minor).
 #' 
-#' @param multiple.lib if TRUE, the script will cycle through multiple CRAN mirrors checking for packages, by default it is set to FALSE.
-#' This will take time and can add packages that are not available in the one specific repository. The default mirror links are: "https://cran.r-project.org", "https://cloud.r-project.org/", "https://cran.rstudio.com/" and "ftp://cran.r-project.org/pub/R/"
-#'
 #' @return A message indicating the success of the repository creation.
 #'
 #' @examples
@@ -30,7 +27,7 @@
 
 #### Update a local repository mirrored from CRAN ####
 
-CRANRepoUpdater <- function(pathtorepo, librepo = c("https://cran.r-project.org", "https://cloud.r-project.org/", "https://cran.rstudio.com/", "ftp://cran.r-project.org/pub/R/"), Rvers = paste0(R.version$major, ".", R.version$minor), multiple.lib = FALSE){
+CRANRepoUpdater <- function(pathtorepo, librepo = "https://cran.r-project.org", Rvers = paste0(R.version$major, ".", R.version$minor)){
   if (!dir.exists(pathtorepo)) {
     cat("Repository not found.\n")
     return(invisible())
