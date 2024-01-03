@@ -1,4 +1,4 @@
-A#### Info ####
+#### Info ####
 
 #' Make a local repository by mirroring CRAN
 #'
@@ -7,19 +7,19 @@ A#### Info ####
 #' @param pathtorepo The path to the folder where the repository is to be created.
 #'
 #' @param libpath The path to the library where the repository is made from. 
-#' By default, it is set to "https://cloud.r-project.org/".
+#' The default mirror links are: "https://cran.r-project.org", "https://cloud.r-project.org/", "https://cran.rstudio.com/" and "ftp://cran.r-project.org/pub/R/"
 #'
 #' @param Rvers The version of R for which the repository is made. 
 #' By default, it is set to the current R version (major.minor).
 #' 
-#' @param dependencies Whether the function will look up dependencies for each package, by default it is set to FALSE.
-#' This will take time and can add packages that are not available in the repository. You may have to add these packages separately from a different repository
+#' @param multiple.lib if TRUE, the script will cycle through multiple CRAN mirrors checking for packages, by default it is set to FALSE.
+#' This will take time and can add packages that are not available in the one specific repository. The default mirror links are: "https://cran.r-project.org", "https://cloud.r-project.org/", "https://cran.rstudio.com/" and "ftp://cran.r-project.org/pub/R/"
 #'
-#' @return A message indicating the success of the repository creation.
+#' @return
 #'
 #' @examples
 #' \dontrun{
-#' CRANMaker(pathtorepo = "path/to/repo", libpath = "https://cloud.r-project.org/", Rvers = "4.2", dependencies = TRUE)
+#' CRANMaker(pathtorepo = "path/to/repo", libpath = "https://cran.r-project.org", Rvers = "4.2", dependencies = TRUE)
 #' }
 #'
 #' Created by Istvan Laszlo Gyimes (ig16036[at]essex.ac.uk)
@@ -28,11 +28,10 @@ A#### Info ####
 #' Last modified 01-DEC-2023
 #' @export
 
-
-
-#### Make a local repository by mirroring CRAN ####
-CRANMaker <- function(pathtorepo, librepo = "https://cloud.r-project.org/", Rvers = paste0(R.version$major, ".", R.version$minor), dependencies = FALSE){
-  # If provided path does not exist, we create it
+CRANMaker <- function(pathtorepo, librepo = c("https://cran.r-project.org", "https://cloud.r-project.org/", "https://cran.rstudio.com/", "ftp://cran.r-project.org/pub/R/"), Rvers = paste0(R.version$major, ".", R.version$minor), multiple.lib = FALSE){
+  
+  # Step 0 - Make sure that the folder for the repository exists, if not, create it
+  
   checkpoint <- 0
   while (checkpoint == 0) {
     if (!dir.exists(pathtorepo)) {
@@ -55,7 +54,17 @@ CRANMaker <- function(pathtorepo, librepo = "https://cloud.r-project.org/", Rver
     }
   }
   
-  # Step 0 - Ensure that we have the packages we will use
+  # Step 0.1 - Set up the repository variable
+  
+  if (multiple.lib == FALSE) {
+    librepo <- librepo[1]
+    additional.libs <- list()
+  } else {
+    additional.libs <-  librepo[2:length(librepo)]
+    librepo <- librepo[1]
+  }
+  
+  # Step 0.2 - Ensure that we have the packages we will use
   
   if (!require(miniCRAN)) {
     install.packages("miniCRAN", repos = librepo)
@@ -65,36 +74,105 @@ CRANMaker <- function(pathtorepo, librepo = "https://cloud.r-project.org/", Rver
     install.packages("tools", repos = librepo)
   }
   
-  # Step 1 - Create a list of the packages to install
-  
-  packages_to_add <- data.frame(miniCRAN::pkgAvail(repos = librepo, type = "win.binary", Rversion = Rvers))$Package
-  
-  # Step 2 - Increase the list by adding the dependencies for each package # Note, this may include packages not avaiable on the library specified
-  if (dependencies == TRUE) {
-    packages_to_add_withdeps <- miniCRAN::pkgDep(pkg = packages_to_add, repos = librepo, type = "win.binary", depends = T, suggests = F, includeBasePkgs = F, quiet = T, Rversion =  Rvers)
-    packages_to_make_repo_from <- unlist(as.list(packages_to_add_withdeps))
-  } else {
-    packages_to_make_repo_from <- packages_to_add
+  if (!require(dplyr)) {
+    install.packages("dplyr", repos = librepo)
   }
   
-  # Step 3 - Create a local repository with both source and binary versions
-  miniCRAN::makeRepo(pkgs = packages_to_make_repo_from,
-                               path = pathtorepo,
-                               type = c("win.binary", "source"),
-                               download = T,
-                               writePACKAGES = F,
-                               quiet = T,
-                               repos = librepo,
-                               Rversion =  Rvers)
+  # Step 1 - Create local repos for all R versions defined
+  warnings_errors <- list()
+  for (rv in Rvers) {
+    cat(paste0("Repository for R ", rv, " is being made.\n"))
+    
+    # Step 2 - Create a list of the packages to install
+      packages_to_make_repo_from_bin <- miniCRAN::pkgAvail(repos = librepo, type = "win.binary", Rversion = rv)[,1]
+      packages_to_make_repo_from_src <- miniCRAN::pkgAvail(repos = librepo, type = "source", Rversion = rv)[,1]
+      
+      # Ensure that we do not download the same things again and again
+      
+      if (dir.exists(paste0(pathtorepo, "/src/contrib"))) {
+        packages_we_have_src <- gsub(".tar.gz", "", dir(paste0(pathtorepo, "/src/contrib")))
+        srccheck <- paste0(miniCRAN::pkgAvail(repos = librepo, type = "source", Rversion = rv)[,1], "_", miniCRAN::pkgAvail(repos = librepo, type = "source", Rversion = rv)[,2])
+        packages_to_make_repo_from_src <- sub("_(.*)", "", srccheck[!srccheck %in% intersect(srccheck, packages_we_have_src)])
+      }
+    # Step 3 - Make the repository
+      miniCRAN::makeRepo(pkgs = packages_to_make_repo_from_bin,
+                         path = pathtorepo,
+                         type = c("win.binary"),
+                         download = T,
+                         writePACKAGES = F,
+                         quiet = T,
+                         repos = librepo,
+                         Rversion =  rv)
+      miniCRAN::makeRepo(pkgs = packages_to_make_repo_from_src,
+                         path = pathtorepo,
+                         type = c("source"),
+                         download = T,
+                         writePACKAGES = F,
+                         quiet = T,
+                         repos = librepo,
+                         Rversion =  rv)
+    # Checkpoint - Do we have all packages from the list?
+      for (lr in c(librepo, additional.libs)) {
+        print(lr)
+        packages_we_have_src <- gsub(".tar.gz", "", dir(paste0(pathtorepo, "/src/contrib")))
+        packages_we_have_bin <- gsub(".zip", "", dir(paste0(pathtorepo, "/bin/windows/contrib/", rv)))
+        srccheck <- paste0(miniCRAN::pkgAvail(repos = librepo, type = "source", Rversion = rv)[,1], "_", miniCRAN::pkgAvail(repos = librepo, type = "source", Rversion = rv)[,2])
+        wincheck <- paste0(miniCRAN::pkgAvail(repos = librepo, type = "win.binary", Rversion = rv)[,1], "_", miniCRAN::pkgAvail(repos = librepo, type = "win.binary", Rversion = rv)[,2])
+        
+        if (length(srccheck[!srccheck %in% intersect(srccheck, packages_we_have_src)]) == 0 & length(wincheck[!wincheck %in% intersect(wincheck, packages_we_have_bin)]) == 0) {
+          break
+        } else {
+          #If not, let's add the missing ones
+          if (!length(srccheck[!srccheck %in% intersect(srccheck, packages_we_have_src)]) == 0) {
+            pks <- sub("_(.*)", "", srccheck[!srccheck %in% intersect(srccheck, packages_we_have_src)])
+            miniCRAN::addPackage(pkgs = pks,
+                                 path = pathtorepo,
+                                 repos = lr,
+                                 type = "source",
+                                 Rversion = rv,
+                                 writePACKAGES = F,
+                                 deps = F,
+                                 quiet = T)
+          }
+          
+          if (!length(wincheck[!wincheck %in% intersect(wincheck, packages_we_have_bin)]) == 0) {
+            pks <- sub("_(.*)", "", wincheck[!wincheck %in% intersect(wincheck, packages_we_have_bin)])
+            miniCRAN::addPackage(pkgs = pks,
+                                 path = pathtorepo,
+                                 repos = lr,
+                                 type = "win.binary",
+                                 Rversion = rv,
+                                 writePACKAGES = F,
+                                 deps = F,
+                                 quiet = T)
+          }
+        }
+      }
+      
+    # Step 4 - Write PACKAGES for the bin folder for each R version
+    
+    tools::write_PACKAGES(dir = paste0(pathtorepo, "/bin/windows/contrib/", rv, "/"), type = "win.binary")
+    cat(paste0("Repository for R versions ", Rvers, " is done", "\n"))
+  }
   
+  # Step 5 - Create a folder for archiving packages when updates are being done
   
-  # Step 4 - Create a folder for archiving packages when updates are being done
   if(!file.exists(paste0(pathtorepo, "/Archive/"))){
     dir.create(path = paste0(pathtorepo, "/Archive/"))
   }
-  tools::write_PACKAGES(dir = paste0(pathtorepo, "/bin/windows/contrib/", Rvers, "/"), type = "win.binary")
+  
+  # Step 6 - Write the PACKAGES files
+  
+  # Step 6.1 - Write PACKAGES for src folder
+  
   tools::write_PACKAGES(dir = paste0(pathtorepo, "/src/contrib/"), type = "source")
+  
+  # Step 6.2 - Write PACKAGES for Archive folder
+  
   if (!length(dir(paste0(pathtorepo, "/Archive/src/contrib/"))) == 0) {
     tools::write_PACKAGES(dir = paste0(pathtorepo, "/Archive/src/contrib/"), type = "source")
   }
 }
+
+
+
