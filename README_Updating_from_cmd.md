@@ -16,4 +16,4 @@ Rscript path/to/the/Script_for_updateing_from_cmd.R -ps path/to/CRANRepoUpdater.
 For this to run Rscript needs to be part of PATH. It can be found at:
 C:/Program Files/R/R-4.3.2/bin/x64
 
-Note, that R does not always like paths like ust$\. In cases like this, a driver should be assigned to the paths used for the repo and the scripts.
+Note, that R does not always like paths with '$\' in them. In cases like this, a driver should be assigned to the paths used for the repo and the scripts.
