@@ -11,7 +11,7 @@ The arguments are the following:
 
 Suggested use:
 
-Rscript path/to/the/Script_for_updateing_from_cmd.R -ps path/to/CRANRepoUpdater.R -pr path/to/UKDA_CRAN
+Rscript path/to/the/Script_for_updateing_from_cmd.R -ps path/to/CRANRepoUpdater.R -pr path/to/local/CRAN_repo
 
 For this to run Rscript needs to be part of PATH. It can be found at:
 C:/Program Files/R/R-4.3.2/bin/x64
